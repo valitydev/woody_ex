@@ -1,0 +1,108 @@
+defmodule Woody.Server.Builder do
+
+  alias Woody.Thrift
+
+  @spec defservice(module, Woody.Thrift.service) :: Macro.output
+  defmacro defservice(modname, service) do
+
+    callbacks = for function <- Thrift.get_service_functions(service) do
+      def_name = gen_function_name(function)
+      var_types = gen_variable_types(service, function)
+      return_type = gen_return_type(service, function)
+
+      quote do
+        @callback unquote(def_name) (unquote_splicing(var_types), Woody.Context.t, Woody.Server.Http.Handler.hdlopts) ::
+        unquote(return_type) | Woody.Server.Http.Handler.throws(any)
+      end
+
+    end
+
+    macro = {:quote, [context: Woody.Server.Builder], [
+      [do: quote do
+        require Woody.Server.Builder
+        Woody.Server.Builder.__impl_service__(unquote(modname), unquote(service))
+      end]
+    ]}
+
+    quote location: :keep do
+
+      defmodule unquote(modname) do
+
+        defmacro __using__(options \\ []) do
+          unquote(macro)
+        end
+
+        unquote_splicing(callbacks)
+
+      end
+
+    end
+
+  end
+
+  defmacro __impl_service__(modname, service) do
+    functions = Thrift.get_service_functions(service)
+    handler = for function <- functions do
+      def_name = gen_function_name(function)
+      var_names = gen_variable_names(service, function, __MODULE__)
+
+      quote do
+        defp __handle__(unquote(function), {unquote_splicing(var_names)}, ctx, hdlopts) do
+          unquote(def_name)(unquote_splicing(var_names), ctx, hdlopts)
+        end
+      end
+
+    end
+
+    quote location: :keep do
+
+      @behaviour unquote(modname)
+
+      @spec __service__() :: Woody.Thrift.service
+      def __service__(), do: unquote(service)
+
+      @behaviour Woody.Server.Http.Handler
+      @impl Woody.Server.Http.Handler
+      def handle_function(function_name, args, context, hdlopts) do
+        __handle__(function_name, args, context, hdlopts)
+      end
+
+      unquote_splicing(handler)
+
+    end
+  end
+
+  defp gen_variable_names(service, function, context) do
+    for field <- Thrift.get_function_params(service, function) do
+      field
+        |> Thrift.get_field_name()
+        |> underscore()
+        |> Macro.var(context)
+    end
+  end
+
+  defp gen_variable_types(service, function) do
+    for field <- Thrift.get_function_params(service, function) do
+      field
+        |> Thrift.get_field_type()
+        |> Thrift.MacroHelpers.map_type()
+    end
+  end
+
+  defp gen_return_type(service, function) do
+    Thrift.get_function_reply(service, function)
+      |> Thrift.MacroHelpers.map_type()
+  end
+
+  @spec gen_function_name(atom) :: atom
+  defp gen_function_name(function) do
+    idiomatic_name = function |> Atom.to_string() |> Macro.underscore()
+    String.to_atom("handle_#{idiomatic_name}")
+  end
+
+  @spec underscore(atom) :: atom
+  defp underscore(atom) do
+    atom |> Atom.to_string() |> Macro.underscore() |> String.to_atom()
+  end
+
+end
