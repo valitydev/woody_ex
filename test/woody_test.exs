@@ -83,10 +83,6 @@ defmodule WoodyTest do
     [client: client]
   end
 
-  test "hello record" do
-    assert test_Powerup(name: "blarg") == {:test_Powerup, "blarg", :undefined, :undefined}
-  end
-
   test "gets weapon", context do
     assert {:ok, test_Weapon(name: "blarg")} = Weapons.Client.get_weapon(context[:client], "blarg", "<data>")
   end
