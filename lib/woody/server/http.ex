@@ -96,6 +96,28 @@ defmodule Woody.Server.Http do
 
   end
 
+  @spec child_spec(id, Endpoint.t, Handler.t | [Handler.t], Keyword.t) :: Supervisor.child_spec
+  def child_spec(id, endpoint, handlers, options \\ []) do
+    opts = %{
+      protocol: :thrift,
+      transport: :http,
+      handlers: [],
+      event_handler: [],
+      ip: endpoint.ip,
+      port: endpoint.port,
+      additional_routes: List.wrap(handlers)
+    }
+    opts = options |> Enum.reduce(opts, fn
+      ({:transport_opts, transport_opts}, opts) when is_map(transport_opts) ->
+        %{opts | transport_opts: transport_opts}
+      ({:protocol_opts, protocol_opts}, opts) when is_map(protocol_opts) ->
+        %{opts | protocol_opts: protocol_opts}
+      ({:shutdown_timeout, timeout}, opts) when is_integer(timeout) and timeout >= 0 ->
+        %{opts | shutdown_timeout: timeout}
+    end)
+    WoodyServer.child_spec(id, opts)
+  end
+
   @spec endpoint(id) :: Endpoint.t
   def endpoint(id) do
     {ip, port} = WoodyServer.get_addr(id)
