@@ -7,9 +7,13 @@ defmodule Woody.MixProject do
       version: "0.1.0",
       elixir: "~> 1.13",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      elixirc_paths: elixirc_paths(Mix.env())
     ]
   end
+
+  defp elixirc_paths(:test), do: ["lib", "test"]
+  defp elixirc_paths(_), do: ["lib"]
 
   # Run "mix help compile.app" to learn about applications.
   def application do
@@ -22,7 +26,6 @@ defmodule Woody.MixProject do
   defp deps do
     [
       {:woody, git: "https://github.com/valitydev/woody_erlang.git", branch: "master"},
-      {:rec_struct, "~> 0.3.0", only: :test},
       {:dialyxir, "~> 1.2", only: [:dev], runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false}
     ]

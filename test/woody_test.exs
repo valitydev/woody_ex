@@ -1,19 +1,13 @@
-defmodule Thrift do
-  import RecStruct
-  require RecStruct
-  defheader Test, "test/gen/woody_test_thrift.hrl" do
-  end
-end
-
 defmodule WoodyTest do
   use ExUnit.Case
   # doctest Woody
 
-  import Thrift.Test.Records
-  require Thrift.Test.Records
-
-  @thrift_service {:woody_test_thrift, :Weapons}
-  @woody_options [event_handler: :woody_event_handler_default]
+  require WoodyTest.Record
+  WoodyTest.Record.extract("test/gen/woody_test_thrift.hrl", [
+    :test_Weapon,
+    :test_WeaponFailure,
+    :test_Powerup
+  ])
 
   defmodule Weapons do
     import Woody.Server.Builder
@@ -22,6 +16,12 @@ defmodule WoodyTest do
 
     defmodule Handler do
       use Weapons.Service
+
+      require WoodyTest.Record
+      WoodyTest.Record.extract("test/gen/woody_test_thrift.hrl", [
+        :test_Weapon,
+        :test_WeaponFailure
+      ])
 
       @impl Weapons.Service
       def handle_switch_weapon(current, direction, shift, _data, _ctx, _hdlopts) do
