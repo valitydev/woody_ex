@@ -22,7 +22,9 @@ defmodule Woody.MixProject do
   defp deps do
     [
       {:woody, git: "https://github.com/valitydev/woody_erlang.git", branch: "master"},
-      {:rec_struct, "~> 0.3.0", only: :test}
+      {:rec_struct, "~> 0.3.0", only: :test},
+      {:dialyxir, "~> 1.2", only: [:dev], runtime: false},
+      {:credo, "~> 1.6", only: [:dev, :test], runtime: false}
     ]
   end
 end
