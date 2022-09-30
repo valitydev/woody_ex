@@ -66,6 +66,7 @@ defmodule Woody.Server.Builder do
 
       @behaviour Woody.Server.Http.Handler
 
+      @impl Woody.Server.Http.Handler
       @spec service() :: Woody.Thrift.service
       def service, do: unquote(service)
 
