@@ -1,5 +1,11 @@
 defmodule Woody.Server.Builder do
+  @moduledoc """
+  This module provides macro facilities to automatically generate handler behaviours and handler
+  boilerplate for some [Thrift service](`Woody.Thrift.service()`).
+  """
 
+  alias Woody.Server.Builder
+  alias Woody.Server.Http.Handler
   alias Woody.Thrift
 
   @spec defservice(module, Woody.Thrift.service) :: Macro.output
@@ -11,16 +17,16 @@ defmodule Woody.Server.Builder do
       return_type = gen_return_type(service, function)
 
       quote do
-        @callback unquote(def_name) (unquote_splicing(var_types), Woody.Context.t, Woody.Server.Http.Handler.hdlopts) ::
-        unquote(return_type) | Woody.Server.Http.Handler.throws(any)
+        @callback unquote(def_name) (unquote_splicing(var_types), Woody.Context.t, Handler.hdlopts) ::
+        unquote(return_type) | Handler.throws(any)
       end
 
     end
 
-    macro = {:quote, [context: Woody.Server.Builder], [
+    macro = {:quote, [context: Builder], [
       [do: quote do
-        require Woody.Server.Builder
-        Woody.Server.Builder.__impl_service__(unquote(modname), unquote(service))
+        require Builder
+        Builder.__impl_service__(unquote(modname), unquote(service))
       end]
     ]}
 
@@ -58,10 +64,11 @@ defmodule Woody.Server.Builder do
 
       @behaviour unquote(modname)
 
-      @spec __service__() :: Woody.Thrift.service
-      def __service__(), do: unquote(service)
-
       @behaviour Woody.Server.Http.Handler
+
+      @spec service() :: Woody.Thrift.service
+      def service, do: unquote(service)
+
       @impl Woody.Server.Http.Handler
       def handle_function(function_name, args, context, hdlopts) do
         __handle__(function_name, args, context, hdlopts)

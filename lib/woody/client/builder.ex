@@ -1,6 +1,27 @@
 defmodule Woody.Client.Builder do
+  @moduledoc """
+  This module provides macro facilities to generate correctly typespecced clients for some [Thrift
+  service](`Woody.Thrift.service()`).
+
+  You could just `use` it in a module of your choice.
+  ```
+  defmodule MyClient do
+    use Woody.Client.Builder, service: {:woody_test_thrift, :Weapons}
+  end
+
+  defmodule MyLogic do
+    def rotate_weapon(client, name) do
+      shovel = MyClient.get_weapon(client, "shovel", "...")
+      double_sided_shovel = MyClient.switch_weapon(shovel, :next, 1, "...)
+    end
+  end
+  ```
+  """
+
+  alias Woody.Client.Http, as: Client
   alias Woody.Thrift
 
+  @spec __using__(Keyword.t) :: Macro.output
   defmacro __using__(options) do
     service = Keyword.fetch!(options, :service)
     for function <- Thrift.get_service_functions(service) do
@@ -18,10 +39,9 @@ defmodule Woody.Client.Builder do
       end
 
       quote location: :keep do
-        @spec unquote(def_name) (Woody.Client.Http.t, unquote_splicing(variable_types)) ::
-          unquote(result_type)
+        @spec unquote(def_name) (Client.t, unquote_splicing(variable_types)) :: unquote(result_type)
         def unquote(def_name) (client, unquote_splicing(variable_names)) do
-          Woody.Client.Http.call(
+          Client.call(
             client,
             unquote(service),
             unquote(function),

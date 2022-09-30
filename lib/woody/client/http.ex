@@ -1,4 +1,8 @@
 defmodule Woody.Client.Http do
+  @moduledoc """
+  A Woody RPC client over HTTP/1.1 transport protocol.
+  """
+
   alias Woody.Thrift
   alias :woody_client, as: WoodyClient
 
@@ -10,6 +14,10 @@ defmodule Woody.Client.Http do
   @type url :: String.t
   @type args :: tuple
 
+  @doc """
+  Creates a fresh Woody client given [context](`Woody.Context`) and URL where the server could be
+  reached.
+  """
   @spec new(Woody.Context.t, url, Keyword.t) :: t
   def new(ctx, url, options \\ []) do
     opts = %{
@@ -20,7 +28,7 @@ defmodule Woody.Client.Http do
     }
     opts = options |> Enum.reduce(opts, fn
       {:event_handler, evh}, opts -> %{opts | event_handler: List.wrap(evh)}
-      {:transport, transport_opts}, opts -> %{opts | transport_opts: transport_opts};
+      {:transport, transport_opts}, opts -> %{opts | transport_opts: transport_opts}
       {:resolver, resolver_opts}, opts -> %{opts | resolver_opts: resolver_opts}
     end)
     %__MODULE__{

@@ -1,11 +1,24 @@
 defmodule Woody.Context do
+  @moduledoc """
+  Context holds few important bits information for a single RPC.
+
+  1. A triple of identifiers required to identify a single request in a system and transitively
+  correlate it to all other requests issued from a root request. This is called RPC ID and consists
+  of _trace id_, _span id_ and _parent id_.
+
+  2. A _ which marks the latest moment of time the caller expects RPC to be handled. If deadline is
+  already in the past there's no point to handle it at all.
+  """
 
   alias :woody_context, as: WoodyContext
 
   @type t :: WoodyContext.ctx
 
+  @doc """
+  Creates new root context with automatically generated unique RPC ID.
+  """
   @spec new() :: t
-  def new() do
+  def new do
     WoodyContext.new()
   end
 
@@ -24,6 +37,10 @@ defmodule Woody.Context do
     WoodyContext.new_req_id() |> WoodyContext.new_rpc_id()
   end
 
+  @doc """
+  Creates a child context which inherits `ctx`'s _trace id_ and takes `ctx`'s _span id_ as
+  _parent id_.
+  """
   @spec child(t) :: t
   def child(ctx) do
     WoodyContext.new_child(ctx)
