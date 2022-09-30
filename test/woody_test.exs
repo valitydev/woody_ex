@@ -2,8 +2,9 @@ defmodule WoodyTest do
   use ExUnit.Case
   # doctest Woody
 
-  require WoodyTest.Record
-  WoodyTest.Record.extract("test/gen/woody_test_thrift.hrl", [
+  alias Woody.Thrift.Header
+  require Header
+  Header.import_records("test/gen/woody_test_thrift.hrl", [
     :test_Weapon,
     :test_WeaponFailure,
     :test_Powerup
@@ -17,8 +18,8 @@ defmodule WoodyTest do
     defmodule Handler do
       use Weapons.Service
 
-      require WoodyTest.Record
-      WoodyTest.Record.extract("test/gen/woody_test_thrift.hrl", [
+      require Header
+      Header.import_records("test/gen/woody_test_thrift.hrl", [
         :test_Weapon,
         :test_WeaponFailure
       ])

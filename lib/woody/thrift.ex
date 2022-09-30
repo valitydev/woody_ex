@@ -65,6 +65,20 @@ defmodule Woody.Thrift do
   @spec get_field_type(field) :: ttype
   def get_field_type({_n, _req, type, _name, _default}), do: type
 
+  defmodule Header do
+    @moduledoc false
+
+    @spec import_records(Path.t, atom | [atom]) :: Macro.output
+    defmacro import_records(from, names) do
+      quote do
+        require Record
+        Enum.each(unquote(List.wrap(names)), fn name ->
+          Record.defrecord(name, Record.extract(name, from: unquote(from)))
+        end)
+      end
+    end
+  end
+
   defmodule MacroHelpers do
     @moduledoc false
 
