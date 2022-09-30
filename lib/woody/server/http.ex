@@ -40,29 +40,13 @@ defmodule Woody.Server.Http do
 
   end
 
-  @spec child_spec(id, Endpoint.t, Handler.t | [Handler.t], Keyword.t) :: Supervisor.child_spec
-  def child_spec(id, endpoint, handlers, options \\ []) do
-    opts = %{
-      protocol: :thrift,
-      transport: :http,
-      handlers: [],
-      event_handler: [],
-      ip: endpoint.ip,
-      port: endpoint.port,
-      additional_routes: List.wrap(handlers)
-    }
-    opts = options |> Enum.reduce(opts, fn
-      ({:transport_opts, transport_opts}, opts) when is_map(transport_opts) ->
-        %{opts | transport_opts: transport_opts}
-      ({:protocol_opts, protocol_opts}, opts) when is_map(protocol_opts) ->
-        %{opts | protocol_opts: protocol_opts}
-      ({:shutdown_timeout, timeout}, opts) when is_integer(timeout) and timeout >= 0 ->
-        %{opts | shutdown_timeout: timeout}
-    end)
-    WoodyServer.child_spec(id, opts)
-  end
-
   defmodule Handler do
+    @moduledoc """
+    A single Woody RPC handler for a [Thrift service](`Woody.Thrift.service`). This module defines
+    a behaviour your modules have to implement. Using modules generated with
+    (`defservice/2`)[`Woody.Server.Builder.defservice/2`] macro implement this behaviour
+    automatically.
+    """
 
     @type args :: tuple
     @type hdlopts :: any
