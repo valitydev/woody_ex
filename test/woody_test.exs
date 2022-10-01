@@ -5,9 +5,8 @@ defmodule WoodyTest do
   alias Woody.Thrift.Header
   require Header
   Header.import_records("test/gen/woody_test_thrift.hrl", [
-    :test_Weapon,
-    :test_WeaponFailure,
-    :test_Powerup
+    {:test_Weapon, as: :weapon},
+    {:test_WeaponFailure, as: :weaponFailure}
   ])
 
   defmodule Weapons do
@@ -20,18 +19,17 @@ defmodule WoodyTest do
 
       require Header
       Header.import_records("test/gen/woody_test_thrift.hrl", [
-        :test_Weapon,
-        :test_WeaponFailure
+        {:test_Weapon, as: :weapon},
+        {:test_WeaponFailure, as: :weaponFailure}
       ])
 
       @impl Weapons.Service
-      def handle_switch_weapon(current, direction, shift, _data, _ctx, _hdlopts) do
-        test_Weapon(slot_pos: pos) = current
+      def handle_switch_weapon(weapon(slot_pos: pos) = current, direction, shift, _data, _ctx, _hdlopts) do
         pos = if direction == :next, do: pos + shift, else: pos - shift
         if pos > 0 do
-          test_Weapon(current, slot_pos: pos)
+          weapon(current, slot_pos: pos)
         else
-          throw test_WeaponFailure(
+          throw weaponFailure(
             code: "invalid_shift",
             reason: "Shifted into #{pos} position"
           )
@@ -43,7 +41,7 @@ defmodule WoodyTest do
         42 = 1337
       end
       def handle_get_weapon(name, _data, _ctx, _hdlopts) do
-        test_Weapon(name: name, slot_pos: 42, ammo: 9001)
+        weapon(name: name, slot_pos: 42, ammo: 9001)
       end
 
       @impl Weapons.Service
@@ -80,29 +78,30 @@ defmodule WoodyTest do
   setup context do
     trace_id = context[:test] |> to_string() |> String.slice(0, 64)
     woody_ctx = Woody.Context.new(trace_id: trace_id)
-    client = Woody.Client.Http.new(woody_ctx, context[:url], event_handler: :woody_event_handler_default)
+    client = Woody.Client.Http.new(woody_ctx, context.url, event_handler: :woody_event_handler_default)
     [client: client]
   end
 
   test "gets weapon", context do
-    assert {:ok, test_Weapon(name: "blarg")} = Weapons.Client.get_weapon(context[:client], "blarg", "<data>")
+    assert {:ok, weapon(name: "blarg")}
+      = Weapons.Client.get_weapon(context.client, "blarg", "<data>")
   end
 
   test "switches weapon", context do
-    weapon = test_Weapon(name: "blarg", slot_pos: 42, ammo: 9001)
-    assert {:ok, test_Weapon(name: "blarg", slot_pos: 43, ammo: 9001)}
-      = Weapons.Client.switch_weapon(context[:client], weapon, :next, 1, "<data>")
+    weapon = weapon(name: "blarg", slot_pos: 42, ammo: 9001)
+    assert {:ok, weapon(name: "blarg", slot_pos: 43, ammo: 9001)}
+      = Weapons.Client.switch_weapon(context.client, weapon, :next, 1, "<data>")
   end
 
   test "fails weapon switch", context do
-    weapon = test_Weapon(name: "blarg", slot_pos: 42, ammo: 9001)
-    assert {:exception, test_WeaponFailure(code: "invalid_shift")}
-      = Weapons.Client.switch_weapon(context[:client], weapon, :prev, 50, "<data>")
+    weapon = weapon(name: "blarg", slot_pos: 42, ammo: 9001)
+    assert {:exception, weaponFailure(code: "invalid_shift")}
+      = Weapons.Client.switch_weapon(context.client, weapon, :prev, 50, "<data>")
   end
 
   test "receives unexpected error", context do
     assert_raise Woody.UnexpectedError, ~r/^received an unexpected error/, fn ->
-      Weapons.Client.get_weapon(context[:client], "oops", "<data>")
+      Weapons.Client.get_weapon(context.client, "oops", "<data>")
     end
   end
 

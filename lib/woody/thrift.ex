@@ -68,15 +68,44 @@ defmodule Woody.Thrift do
   defmodule Header do
     @moduledoc false
 
-    @spec import_records(Path.t, atom | [atom]) :: Macro.output
-    defmacro import_records(from, names) do
+    @type import :: atom | {atom, Keyword.t}
+
+    @doc """
+    Allows to extract and define multiple Erlang records in one pass with the help of
+    `Record.defrecord/3`.
+
+    ```
+    require Woody.Thrift.Header
+    Woody.Thrift.Header.import_records("test/gen/woody_test_thrift.hrl", [
+      :test_Weapon,
+      {:test_WeaponFailure, as: WeaponFailure} # alias record for more concise code
+    ])
+    ```
+    """
+    @spec import_records(Path.t, [import]) :: Macro.output
+    defmacro import_records(from, imports) do
+      records = run_import_records(from, imports)
       quote do
         require Record
-        Enum.each(unquote(List.wrap(names)), fn name ->
-          Record.defrecord(name, Record.extract(name, from: unquote(from)))
-        end)
+        unquote(records)
       end
     end
+
+    defp run_import_records(from, imports) do
+      imports |> Enum.map(fn
+        {name, opts} ->
+          import_record(from, name, opts[:as])
+        name ->
+          import_record(from, name)
+      end)
+    end
+
+    defp import_record(from, name, as \\ nil) do
+      quote bind_quoted: [from: from, name: as || name, tag: name] do
+        Record.defrecord(name, tag, Record.extract(tag, from: from))
+      end
+    end
+
   end
 
   defmodule MacroHelpers do
