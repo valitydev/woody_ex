@@ -23,5 +23,5 @@
   "telemetry": {:hex, :telemetry, "1.1.0", "a589817034a27eab11144ad24d5c0f9fab1f58173274b1e9bae7074af9cbee51", [:rebar3], [], "hexpm", "b727b2a1f75614774cff2d7565b64d0dfa5bd52ba517f16543e6fc7efcc0df48"},
   "thrift": {:git, "https://github.com/pinterest/elixir-thrift", "3ab57fc65d60eea63381318f2741582b19c2dcda", [branch: "master"]},
   "unicode_util_compat": {:hex, :unicode_util_compat, "0.7.0", "bc84380c9ab48177092f43ac89e4dfa2c6d62b40b8bd132b1059ecc7232f9a78", [:rebar3], [], "hexpm", "25eee6d67df61960cf6a794239566599b09e17e668d3700247bc498638152521"},
-  "woody": {:git, "https://github.com/valitydev/woody_erlang.git", "f5f27e040bf076ee22cf4ab8211e5aace600dbb3", [branch: "ft/compat"]},
+  "woody": {:git, "https://github.com/valitydev/woody_erlang.git", "465f6d45e1aecd2eb3482cb5851ded32398adc8a", [branch: "ft/codec-concept"]},
 }

@@ -43,8 +43,8 @@ defmodule Woody.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      # {:woody, git: "https://github.com/valitydev/woody_erlang.git", branch: "ft/compat"},
-      {:woody, path: "deps/woody"},
+      {:woody, git: "https://github.com/valitydev/woody_erlang.git", branch: "ft/codec-concept"},
+      # {:woody, path: "deps/woody"},
       {:thrift, git: "https://github.com/pinterest/elixir-thrift", branch: "master"},
       {:dialyxir, "~> 1.2", only: [:dev], runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false}
