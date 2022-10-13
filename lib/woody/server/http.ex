@@ -41,7 +41,7 @@ defmodule Woody.Server.Http do
 
   defmodule Handler do
     @moduledoc """
-    A single Woody RPC handler for a [Thrift service](`Woody.Thrift.service`). This module defines
+    A single Woody RPC handler for a Thrift service. This module defines
     a behaviour your modules have to implement. Using modules generated with
     (`defservice/2`)[`Woody.Server.Builder.defservice/2`] macro implement this behaviour
     automatically.
