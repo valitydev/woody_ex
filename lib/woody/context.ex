@@ -11,8 +11,10 @@ defmodule Woody.Context do
   """
 
   alias :woody_context, as: WoodyContext
+  alias :woody, as: WoodyTypes
 
-  @type t :: WoodyContext.ctx
+  @type rpc_id :: WoodyTypes.rpc_id()
+  @type t :: WoodyContext.ctx()
 
   @doc """
   Creates new root context with automatically generated unique RPC ID.
@@ -33,6 +35,7 @@ defmodule Woody.Context do
   defp new_rpc_id(trace_id) when is_binary(trace_id) do
     WoodyContext.new_rpc_id("undefined", trace_id, WoodyContext.new_req_id())
   end
+
   defp new_rpc_id(nil) do
     WoodyContext.new_req_id() |> WoodyContext.new_rpc_id()
   end
@@ -45,5 +48,4 @@ defmodule Woody.Context do
   def child(ctx) do
     WoodyContext.new_child(ctx)
   end
-
 end

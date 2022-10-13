@@ -12,22 +12,24 @@ defmodule Woody.UnexpectedError do
   @type source :: :internal | :external
 
   @type t :: %__MODULE__{
-    source: source,
-    details: String.t
-  }
+          source: source,
+          details: String.t()
+        }
 
+  @enforce_keys [:source]
   defexception [:source, :details]
 
   @impl true
-  @spec message(t) :: String.t
+  @spec message(t) :: String.t()
   def message(ex) do
-    verb = case ex.source do
-      :internal -> "got"
-      :external -> "received"
-    end
-    "#{verb} an unexpected error: #{ex.details}"
-  end
+    verb =
+      case ex.source do
+        :internal -> "got"
+        :external -> "received"
+      end
 
+    "#{verb} an unexpected error: #{ex.details || "nil"}"
+  end
 end
 
 defmodule Woody.BadResultError do
@@ -56,25 +58,47 @@ defmodule Woody.BadResultError do
   @type class :: :resource_unavailable | :result_unknown
 
   @type t :: %__MODULE__{
-    source: source,
-    class: class,
-    details: String.t
-  }
+          source: source,
+          class: class,
+          details: String.t()
+        }
 
+  @enforce_keys [:source, :class]
   defexception [:source, :class, :details]
 
   @impl true
-  @spec message(t) :: String.t
+  @spec message(t) :: String.t()
   def message(ex) do
-    verb = case ex.source do
-      :internal -> "got"
-      :external -> "received"
-    end
-    summary = case ex.class do
-      :resource_unavailable -> "resource unavailable"
-      :result_unknown -> "result is unknown"
-    end
-    "#{verb} no result, #{summary}: #{ex.details}"
+    verb =
+      case ex.source do
+        :internal -> "got"
+        :external -> "received"
+      end
+
+    summary =
+      case ex.class do
+        :resource_unavailable -> "resource unavailable"
+        :result_unknown -> "result is unknown"
+      end
+
+    "#{verb} no result, #{summary}: #{ex.details || "nil"}"
+  end
+end
+
+defmodule Woody.Errors do
+  @moduledoc false
+  alias :woody_error, as: WoodyError
+
+  @spec from_woody_error(WoodyError.system_error()) :: Exception.t()
+  def from_woody_error({source, :result_unexpected, details}) do
+    %Woody.UnexpectedError{source: source, details: details}
   end
 
+  def from_woody_error({source, class, details})
+      when class in [
+             :resource_unavailable,
+             :result_unknown
+           ] do
+    %Woody.BadResultError{source: source, class: class, details: details}
+  end
 end
