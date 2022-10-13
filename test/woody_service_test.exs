@@ -55,8 +55,7 @@ defmodule WoodyServiceTest do
       Server.child_spec(
         __MODULE__,
         Server.Endpoint.loopback(),
-        # TestHandler.new("/weapons", event_handler: :woody_event_handler_default)
-        TestHandler.new("/weapons")
+        TestHandler.new("/weapons", event_handler: Woody.EventHandler.Default)
       )
       |> List.wrap()
       |> Supervisor.start_link(strategy: :one_for_one)
@@ -74,7 +73,6 @@ defmodule WoodyServiceTest do
     trace_id = context[:test] |> Atom.to_string() |> String.slice(0, 64)
     woody_ctx = Woody.Context.new(trace_id: trace_id)
     client = Service.Client.new(woody_ctx, context.url, event_handler: Woody.EventHandler.Default)
-    # client = Service.Client.new(woody_ctx, context.url)
     [client: client]
   end
 
@@ -105,8 +103,7 @@ defmodule WoodyServiceTest do
 
   test "receives unavailable resource", context do
     url = "http://there.should.be.no.such.domain/"
-    # client = Service.Client.new(woody_ctx, url, event_handler: :woody_event_handler_default)
-    client = Service.Client.new(context.client.ctx, url)
+    client = Service.Client.new(context.client.ctx, url, event_handler: Woody.EventHandler.Default)
 
     assert_raise Woody.BadResultError, ~r/^got no result, resource unavailable/, fn ->
       Service.Client.get_weapon(client, "blarg", "<data>")
