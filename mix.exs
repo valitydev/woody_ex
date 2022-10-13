@@ -17,7 +17,6 @@ defmodule Woody.MixProject do
 
   defp overrides(:test) do
     [
-      compilers: [:thrift, :woody],
       elixirc_paths: ["lib", "test"],
       thrift: [
         files: ["test/test.thrift"],
