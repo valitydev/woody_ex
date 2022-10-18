@@ -49,14 +49,21 @@ defmodule Woody.EventHandler do
     end
 
     def format_error(%{result: {:system, error}, class: :system} = meta) do
-      stack = Map.get(meta, :stack, [])
-      Exception.format(:error, Woody.Errors.from_woody_error(error), stack)
+      format_system_error(error, meta)
+    end
+    def format_error(%{result: {_, _, _} = error, class: :system} = meta) do
+      format_system_error(error, meta)
     end
 
     def format_error(%{result: error} = meta) do
       # class = Map.get(meta, :class, :error)
       stack = Map.get(meta, :stack, [])
       Exception.format(:error, error, stack)
+    end
+
+    def format_system_error(error, meta) do
+      stack = Map.get(meta, :stack, [])
+      Exception.format(:error, Woody.Errors.from_woody_error(error), stack)
     end
 
     def format_rpc_id(%{span_id: span, trace_id: trace, parent_id: parent}) do

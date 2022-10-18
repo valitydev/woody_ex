@@ -24,6 +24,10 @@ defmodule WoodyServiceTest do
       42 = 1337
     end
 
+    def get_weapon("unavail", _data, _ctx, _hdlopts) do
+      raise Woody.BadResultError, class: :resource_unavailable, details: "THEY MADE ME DO IT"
+    end
+
     def get_weapon(name, _data, _ctx, _hdlopts) do
       {:ok, %Weapon{name: name, slot_pos: 42, ammo: 9001}}
     end
@@ -109,6 +113,12 @@ defmodule WoodyServiceTest do
 
     assert_raise Woody.BadResultError, ~r/^got no result, resource unavailable/, fn ->
       Service.Client.get_weapon(client, "blarg", "<data>")
+    end
+  end
+
+  test "preserves bad result error", context do
+    assert_raise Woody.BadResultError, ~r/^received no result, resource unavailable/, fn ->
+      Service.Client.get_weapon(context.client, "unavail", "<data>")
     end
   end
 

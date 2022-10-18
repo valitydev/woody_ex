@@ -16,8 +16,7 @@ defmodule Woody.UnexpectedError do
           details: String.t()
         }
 
-  @enforce_keys [:source]
-  defexception [:source, :details]
+  defexception source: :internal, details: nil
 
   @impl true
   @spec message(t) :: String.t()
@@ -63,8 +62,8 @@ defmodule Woody.BadResultError do
           details: String.t()
         }
 
-  @enforce_keys [:source, :class]
-  defexception [:source, :class, :details]
+  @enforce_keys [:class]
+  defexception source: :internal, class: nil, details: nil
 
   @impl true
   @spec message(t) :: String.t()
