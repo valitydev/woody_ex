@@ -101,4 +101,13 @@ defmodule Woody.Errors do
            ] do
     %Woody.BadResultError{source: source, class: class, details: details}
   end
+
+  @spec to_woody_error(Exception.t()) :: WoodyError.system_error()
+  def to_woody_error(%Woody.UnexpectedError{source: source, details: details}) do
+    {source, :result_unexpected, details}
+  end
+
+  def to_woody_error(%Woody.BadResultError{source: source, class: class, details: details}) do
+    {source, class, details}
+  end
 end

@@ -83,26 +83,44 @@ defmodule Woody.Thrift.Generator.Handler do
   defp generate_callback(schema, function) do
     file_group = schema.file_group
     callback_name = Utils.underscore(function.name)
-    return_type = Typespec.from(function.return_type, file_group)
 
     params =
       function.params
       |> Enum.map(&FileGroup.resolve(file_group, &1))
       |> Enum.map(&generate_arg_spec(&1, file_group))
 
+    reply_type = generate_reply_spec(function.return_type, file_group)
+
+    exception_types =
+      function.exceptions
+      |> Enum.map(&generate_exception_spec(&1, file_group))
+
+    return_type = Typespec.sum([reply_type | exception_types])
+
     quote do
       @callback unquote(callback_name)(
                   unquote_splicing(params),
                   ctx :: Woody.Context.t(),
                   hdlops :: Handler.hdlopts()
-                ) ::
-                  unquote(return_type)
+                ) :: unquote(return_type)
     end
   end
 
-  def generate_arg_spec(%Field{name: name, type: type}, file_group) do
+  defp generate_arg_spec(%Field{name: name, type: type}, file_group) do
     quote do
       unquote(Macro.var(name, nil)) :: unquote(Typespec.from(type, file_group))
     end
+  end
+
+  defp generate_reply_spec(:void, _file_group) do
+    :ok
+  end
+
+  defp generate_reply_spec(type, file_group) do
+    {:ok, Typespec.from(type, file_group)}
+  end
+
+  defp generate_exception_spec(%Field{type: type}, file_group) do
+    {:error, Typespec.from(type, file_group)}
   end
 end

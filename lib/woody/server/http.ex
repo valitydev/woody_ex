@@ -59,12 +59,26 @@ defmodule Woody.Server.Http do
     defmodule Adapter do
       @moduledoc false
 
+      alias :woody_error, as: WoodyError
+
       @behaviour WoodyHandler
 
       @impl true
       def handle_function(function, args, ctx, {innermod, hdlopts}) do
         try do
-          {:ok, innermod.handle_function(function, args, ctx, hdlopts)}
+          innermod.handle_function(function, args, ctx, hdlopts)
+        else
+          :ok ->
+            {:ok, nil}
+
+          {:ok, success} ->
+            {:ok, success}
+
+          {:error, %type{} = ex} ->
+            {:exception, type, ex}
+        rescue
+          error in [Woody.UnexpectedError, Woody.BadResultError] ->
+            WoodyError.raise(:system, error |> Woody.Errors.to_woody_error())
         catch
           :throw, %type{} = ex ->
             {:exception, type, ex}

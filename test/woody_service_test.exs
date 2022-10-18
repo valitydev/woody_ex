@@ -25,7 +25,7 @@ defmodule WoodyServiceTest do
     end
 
     def get_weapon(name, _data, _ctx, _hdlopts) do
-      %Weapon{name: name, slot_pos: 42, ammo: 9001}
+      {:ok, %Weapon{name: name, slot_pos: 42, ammo: 9001}}
     end
 
     @impl true
@@ -38,15 +38,15 @@ defmodule WoodyServiceTest do
         end
 
       if pos > 0 do
-        %Weapon{current | slot_pos: pos}
+        {:ok, %Weapon{current | slot_pos: pos}}
       else
-        throw(%WeaponFailure{code: "invalid_shift", reason: "Shifted into #{pos} position"})
+        {:error, %WeaponFailure{code: "invalid_shift", reason: "Shifted into #{pos} position"}}
       end
     end
 
     @impl true
     def get_stuck_looping_weapons(_ctx, _hdlops) do
-      nil
+      :ok
     end
   end
 
@@ -103,7 +103,9 @@ defmodule WoodyServiceTest do
 
   test "receives unavailable resource", context do
     url = "http://there.should.be.no.such.domain/"
-    client = Service.Client.new(context.client.ctx, url, event_handler: Woody.EventHandler.Default)
+
+    client =
+      Service.Client.new(context.client.ctx, url, event_handler: Woody.EventHandler.Default)
 
     assert_raise Woody.BadResultError, ~r/^got no result, resource unavailable/, fn ->
       Service.Client.get_weapon(client, "blarg", "<data>")

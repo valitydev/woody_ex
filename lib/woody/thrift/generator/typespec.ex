@@ -1,5 +1,6 @@
 defmodule Woody.Thrift.Generator.Typespec do
   alias Thrift.Parser.FileGroup
+  alias Thrift.Parser.Types
 
   alias Thrift.AST.{
     Exception,
@@ -9,6 +10,7 @@ defmodule Woody.Thrift.Generator.Typespec do
     Union
   }
 
+  @spec from(Types.t(), FileGroup.t()) :: Macro.t()
   def from(:void, _), do: quote(do: nil)
   def from(:bool, _), do: quote(do: boolean())
   def from(:string, _), do: quote(do: String.t())
@@ -73,6 +75,17 @@ defmodule Woody.Thrift.Generator.Typespec do
 
     quote do
       %{unquote(key_type) => unquote(val_type)}
+    end
+  end
+
+  @spec sum([Macro.t()]) :: Macro.t()
+  def sum([t]) do
+    t
+  end
+
+  def sum([t | rest]) do
+    quote do
+      unquote(t) | unquote(sum(rest))
     end
   end
 end
