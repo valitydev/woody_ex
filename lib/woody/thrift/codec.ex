@@ -46,11 +46,9 @@ defmodule Woody.Thrift.Codec do
         {:ok, {:exception, {:TApplicationException, ex.message, ex.type}}, ""}
 
       {:ok, mismatch} ->
-        # raise Thrift.InvalidValueError, "Unexpected call result received: #{inspect(mismatch)}"
         {:error, {:unexpected_response, mismatch}}
 
       {:error, reason} ->
-        # raise Thrift.InvalidValueError, "Unexpected data received: #{inspect(reason)}"
         {:error, reason}
     end
   end
@@ -61,7 +59,7 @@ defmodule Woody.Thrift.Codec do
         {:ok, unwrap_response(resp), rest}
 
       :error ->
-        {:error, {:invalid_response, rest}}
+        {:error, {:invalid_response, resp_module, rest}}
     end
   end
 

@@ -8,45 +8,72 @@ defmodule Woody.Thrift.Generator.Codec do
   def generate(namespace, schema, service) do
     dest_module = WoodyUtils.dest_module(namespace, schema, service, Codec)
     service_module = WoodyUtils.service_module(schema, service)
+    functions = service.functions |> Map.values()
 
     aliases =
-      service.functions
-      |> Map.values()
+      functions
       |> Enum.map(&generate_function_aliases(schema, service, &1))
       |> Utils.merge_blocks()
 
     rpc_types =
-      service.functions
-      |> Map.values()
+      functions
       |> Enum.map(&generate_rpc_type_function(service_module, &1))
       |> Utils.merge_blocks()
 
-    codecs =
-      service.functions
-      |> Map.values()
-      |> Enum.map(&generate_codec_functions(schema, service_module, &1))
+    read_call_codecs =
+      functions
+      |> Enum.map(&generate_read_call/1)
       |> Utils.merge_blocks()
-      |> Utils.sort_defs()
+
+    write_call_codecs =
+      functions
+      |> Enum.map(&generate_write_call(service_module, &1))
+      |> Utils.merge_blocks()
+
+    read_result_codecs =
+      functions
+      |> Enum.map(&generate_read_result(service_module, &1))
+      |> Utils.merge_blocks()
+
+    write_result_codecs =
+      functions
+      |> Enum.map(&generate_write_result(schema, service_module, &1))
+      |> Utils.merge_blocks()
 
     {dest_module,
      quote do
        defmodule unquote(dest_module) do
          @moduledoc false
 
+         @behaviour :woody_client_codec
+         @behaviour :woody_server_codec
+
          alias Woody.Thrift.Codec
          unquote_splicing(aliases)
 
+         @impl true
          def get_service_name(unquote(service_module)) do
            unquote(WoodyUtils.unqualified_name(service))
          end
 
+         @impl true
          unquote_splicing(rpc_types)
 
+         @impl true
          def read_call(buffer, unquote(service_module)) do
            Codec.read_call(buffer, &read_call/4)
          end
 
-         unquote_splicing(codecs)
+         unquote_splicing(read_call_codecs)
+
+         @impl true
+         unquote_splicing(write_call_codecs)
+
+         @impl true
+         unquote_splicing(read_result_codecs)
+
+         @impl true
+         unquote_splicing(write_result_codecs)
        end
      end}
   end
@@ -80,15 +107,6 @@ defmodule Woody.Thrift.Generator.Codec do
       def get_rpc_type(unquote(service_module), unquote(function.name)) do
         unquote(type)
       end
-    end
-  end
-
-  defp generate_codec_functions(schema, service_module, function) do
-    quote do
-      unquote(generate_write_call(service_module, function))
-      unquote(generate_read_call(function))
-      unquote(generate_write_result(schema, service_module, function))
-      unquote(generate_read_result(service_module, function))
     end
   end
 
@@ -156,12 +174,8 @@ defmodule Woody.Thrift.Generator.Codec do
     end
   end
 
-  defp generate_write_result(_schema, service_module, %Function{name: name, oneway: true}) do
-    quote do
-      def write_result(buffer, unquote(service_module), unquote(name), _resp, _seqid) do
-        {:ok, buffer}
-      end
-    end
+  defp generate_write_result(_schema, _service_module, %Function{oneway: true}) do
+    []
   end
 
   defp generate_write_exception(schema, service_module, function, exception) do
