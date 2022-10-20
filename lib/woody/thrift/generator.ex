@@ -1,4 +1,5 @@
 defmodule Woody.Thrift.Generator do
+  alias Thrift.AST.Schema
   alias Thrift.Parser.FileGroup
   alias Woody.Thrift.Generator.Client
   alias Woody.Thrift.Generator.Codec
@@ -6,8 +7,9 @@ defmodule Woody.Thrift.Generator do
 
   def generate!(%FileGroup{} = file_group, namespace, output_path) do
     Enum.flat_map(file_group.schemas, fn {_, schema} ->
-      schema
-      |> Map.put(:file_group, file_group)
+      file_group = FileGroup.set_current_module(file_group, schema.module)
+
+      %Schema{schema | file_group: file_group}
       |> generate_services(namespace)
       |> write_elixir_files(output_path)
     end)
