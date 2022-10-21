@@ -3,8 +3,12 @@ defmodule Woody.Thrift.Generator.Client do
   alias Thrift.Generator.Utils
   alias Woody.Thrift.Generator.Utils, as: WoodyUtils
 
+  def dest_module(namespace, schema, service) do
+    WoodyUtils.dest_module(namespace, schema, service, Client)
+  end
+
   def generate(namespace, schema, service) do
-    dest_module = WoodyUtils.dest_module(namespace, schema, service, Client)
+    dest_module = dest_module(namespace, schema, service)
     codec_module = WoodyUtils.dest_module(namespace, schema, service, Codec)
 
     aliases =

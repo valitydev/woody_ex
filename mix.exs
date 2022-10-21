@@ -20,10 +20,12 @@ defmodule Woody.MixProject do
       elixirc_paths: ["lib", "test"],
       thrift: [
         files: ["test/test.thrift"],
-        output_path: "test/generated"
+        output_path: "test/generated",
+        verbose: true
       ],
       woody: [
-        output_path: "test/generated"
+        output_path: "test/generated",
+        verbose: true
       ]
     ]
   end

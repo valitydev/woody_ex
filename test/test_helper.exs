@@ -1,3 +1,5 @@
 Mix.Task.run("compile.thrift", ["--verbose"])
 Mix.Task.run("compile.woody", ["--verbose"])
+Mix.Task.clear()
+Mix.Task.run("compile", ["--verbose"])
 ExUnit.start()

@@ -6,8 +6,12 @@ defmodule Woody.Thrift.Generator.Handler do
   alias Woody.Thrift.Generator.Typespec
   alias Woody.Thrift.Generator.Utils, as: WoodyUtils
 
+  def dest_module(namespace, schema, service) do
+    WoodyUtils.dest_module(namespace, schema, service, Handler)
+  end
+
   def generate(namespace, schema, service) do
-    dest_module = WoodyUtils.dest_module(namespace, schema, service, Handler)
+    dest_module = dest_module(namespace, schema, service)
 
     constructor = generate_constructor(namespace, schema, service)
 

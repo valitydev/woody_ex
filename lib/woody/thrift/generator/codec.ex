@@ -5,8 +5,12 @@ defmodule Woody.Thrift.Generator.Codec do
   alias Thrift.Parser.FileGroup
   alias Woody.Thrift.Generator.Utils, as: WoodyUtils
 
+  def dest_module(namespace, schema, service) do
+    WoodyUtils.dest_module(namespace, schema, service, Codec)
+  end
+
   def generate(namespace, schema, service) do
-    dest_module = WoodyUtils.dest_module(namespace, schema, service, Codec)
+    dest_module = dest_module(namespace, schema, service)
     service_module = WoodyUtils.service_module(schema, service)
     functions = service.functions |> Map.values()
 
