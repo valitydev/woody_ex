@@ -1,88 +1,13 @@
 defmodule Woody.Thrift.Generator.Codec do
   alias Thrift.AST.Function
+  alias Thrift.AST.Schema
+  alias Thrift.AST.Service
   alias Thrift.Generator.Service
-  alias Thrift.Generator.Utils
   alias Thrift.Parser.FileGroup
   alias Woody.Thrift.Generator.Utils, as: WoodyUtils
 
-  def dest_module(namespace, schema, service) do
-    WoodyUtils.dest_module(namespace, schema, service, Codec)
-  end
-
-  def generate(namespace, schema, service) do
-    dest_module = dest_module(namespace, schema, service)
-    service_module = WoodyUtils.service_module(schema, service)
-    functions = service.functions |> Map.values()
-
-    aliases =
-      functions
-      |> Enum.map(&generate_function_aliases(schema, service, &1))
-      |> Utils.merge_blocks()
-
-    rpc_types =
-      functions
-      |> Enum.map(&generate_rpc_type_function(service_module, &1))
-      |> Utils.merge_blocks()
-
-    read_call_codecs =
-      functions
-      |> Enum.map(&generate_read_call/1)
-      |> Utils.merge_blocks()
-
-    write_call_codecs =
-      functions
-      |> Enum.map(&generate_write_call(service_module, &1))
-      |> Utils.merge_blocks()
-
-    read_result_codecs =
-      functions
-      |> Enum.map(&generate_read_result(service_module, &1))
-      |> Utils.merge_blocks()
-
-    write_result_codecs =
-      functions
-      |> Enum.map(&generate_write_result(schema, service_module, &1))
-      |> Utils.merge_blocks()
-
-    {dest_module,
-     quote do
-       defmodule unquote(dest_module) do
-         @moduledoc false
-
-         @behaviour :woody_client_codec
-         @behaviour :woody_server_codec
-
-         alias Woody.Thrift.Codec
-         unquote_splicing(aliases)
-
-         @impl true
-         def get_service_name(unquote(service_module)) do
-           unquote(WoodyUtils.unqualified_name(service))
-         end
-
-         @impl true
-         unquote_splicing(rpc_types)
-
-         @impl true
-         def read_call(buffer, unquote(service_module)) do
-           Codec.read_call(buffer, &read_call/4)
-         end
-
-         unquote_splicing(read_call_codecs)
-
-         @impl true
-         unquote_splicing(write_call_codecs)
-
-         @impl true
-         unquote_splicing(read_result_codecs)
-
-         @impl true
-         unquote_splicing(write_result_codecs)
-       end
-     end}
-  end
-
-  defp generate_function_aliases(schema, service, %Function{oneway: false} = function) do
+  @spec generate_function_aliases(Schema.t(), Service.t(), Function.t()) :: Macro.t()
+  def generate_function_aliases(schema, service, %Function{oneway: false} = function) do
     args_module = Service.module_name(function, :args)
     resp_module = Service.module_name(function, :response)
 
@@ -92,7 +17,7 @@ defmodule Woody.Thrift.Generator.Codec do
     end
   end
 
-  defp generate_function_aliases(schema, service, %Function{oneway: true} = function) do
+  def generate_function_aliases(schema, service, %Function{oneway: true} = function) do
     args_module = Service.module_name(function, :args)
 
     quote do
@@ -100,7 +25,10 @@ defmodule Woody.Thrift.Generator.Codec do
     end
   end
 
-  defp generate_rpc_type_function(service_module, function) do
+  @spec generate_function_rpc_type(Schema.t(), Service.t(), Function.t()) :: Macro.t()
+  def generate_function_rpc_type(schema, service, function) do
+    service_module = WoodyUtils.service_module(schema, service)
+
     type =
       case function.oneway do
         false -> :call
@@ -114,7 +42,9 @@ defmodule Woody.Thrift.Generator.Codec do
     end
   end
 
-  defp generate_write_call(service_module, %Function{name: name, oneway: oneway?} = function) do
+  @spec generate_write_call(Schema.t(), Service.t(), Function.t()) :: Macro.t()
+  def generate_write_call(schema, service, %Function{name: name, oneway: oneway?} = function) do
+    service_module = WoodyUtils.service_module(schema, service)
     args_module = Service.module_name(function, :args)
 
     quote do
@@ -136,7 +66,8 @@ defmodule Woody.Thrift.Generator.Codec do
     end
   end
 
-  defp generate_read_call(%Function{name: name} = function) do
+  @spec generate_read_call(Function.t()) :: Macro.t()
+  def generate_read_call(%Function{name: name} = function) do
     args_module = Service.module_name(function, :args)
 
     quote do
@@ -152,11 +83,9 @@ defmodule Woody.Thrift.Generator.Codec do
     end
   end
 
-  defp generate_write_result(
-         schema,
-         service_module,
-         %Function{name: name, oneway: false} = function
-       ) do
+  @spec generate_write_result(Schema.t(), Service.t(), Function.t()) :: Macro.output()
+  def generate_write_result(schema, service, %Function{name: name, oneway: false} = function) do
+    service_module = WoodyUtils.service_module(schema, service)
     resp_module = Service.module_name(function, :response)
 
     exceptions =
@@ -178,8 +107,9 @@ defmodule Woody.Thrift.Generator.Codec do
     end
   end
 
-  defp generate_write_result(_schema, _service_module, %Function{oneway: true}) do
-    []
+  def generate_write_result(_schema, _service, %Function{oneway: true}) do
+    quote do
+    end
   end
 
   defp generate_write_exception(schema, service_module, function, exception) do
@@ -204,7 +134,9 @@ defmodule Woody.Thrift.Generator.Codec do
     end
   end
 
-  defp generate_read_result(service_module, %Function{name: name, oneway: false} = function) do
+  @spec generate_read_result(Schema.t(), Service.t(), Function.t()) :: Macro.t()
+  def generate_read_result(schema, service, %Function{name: name, oneway: false} = function) do
+    service_module = WoodyUtils.service_module(schema, service)
     resp_module = Service.module_name(function, :response)
 
     quote do
@@ -219,7 +151,9 @@ defmodule Woody.Thrift.Generator.Codec do
     end
   end
 
-  defp generate_read_result(service_module, %Function{name: name, oneway: true}) do
+  def generate_read_result(schema, service, %Function{name: name, oneway: true}) do
+    service_module = WoodyUtils.service_module(schema, service)
+
     quote do
       def read_result(_buffer, unquote(service_module), unquote(name), _seqid) do
         :ok

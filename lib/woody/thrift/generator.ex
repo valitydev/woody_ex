@@ -2,7 +2,6 @@ defmodule Woody.Thrift.Generator do
   alias Thrift.AST.Schema
   alias Thrift.Parser.FileGroup
   alias Woody.Thrift.Generator.Client
-  alias Woody.Thrift.Generator.Codec
   alias Woody.Thrift.Generator.Handler
 
   def generate!(%FileGroup{} = file_group, namespace, output_path) do
@@ -33,7 +32,6 @@ defmodule Woody.Thrift.Generator do
     schema.services
     |> Enum.flat_map(fn {_, service} ->
       [
-        Codec.generate(namespace, schema, service),
         Client.generate(namespace, schema, service),
         Handler.generate(namespace, schema, service)
       ]
@@ -44,7 +42,6 @@ defmodule Woody.Thrift.Generator do
     schema.services
     |> Enum.flat_map(fn {_, service} ->
       [
-        Codec.dest_module(namespace, schema, service),
         Client.dest_module(namespace, schema, service),
         Handler.dest_module(namespace, schema, service)
       ]

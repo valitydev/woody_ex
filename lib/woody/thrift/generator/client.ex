@@ -1,6 +1,7 @@
 defmodule Woody.Thrift.Generator.Client do
   alias Thrift.Generator.Service
   alias Thrift.Generator.Utils
+  alias Woody.Thrift.Generator
   alias Woody.Thrift.Generator.Utils, as: WoodyUtils
 
   def dest_module(namespace, schema, service) do
@@ -9,12 +10,14 @@ defmodule Woody.Thrift.Generator.Client do
 
   def generate(namespace, schema, service) do
     dest_module = dest_module(namespace, schema, service)
-    codec_module = WoodyUtils.dest_module(namespace, schema, service, Codec)
 
     aliases =
       service.functions
       |> Map.values()
-      |> Enum.map(&generate_args_alias(schema, service, &1))
+      |> Enum.map(&Generator.Codec.generate_function_aliases(schema, service, &1))
+      |> Utils.merge_blocks()
+
+    codec = generate_codec(schema, service)
 
     constructor = generate_constructor(schema, service)
 
@@ -33,20 +36,56 @@ defmodule Woody.Thrift.Generator.Client do
          @moduledoc false
 
          alias Woody.Client.Http, as: Client
-         alias unquote(codec_module), as: Codec
 
          unquote_splicing(aliases)
+
+         unquote(codec)
 
          unquote_splicing(functions)
        end
      end}
   end
 
-  defp generate_args_alias(schema, service, function) do
-    args_module = Service.module_name(function, :args)
+  defp generate_codec(schema, service) do
+    service_module = WoodyUtils.service_module(schema, service)
+    functions = service.functions |> Map.values()
+
+    rpc_types =
+      functions
+      |> Enum.map(&Generator.Codec.generate_function_rpc_type(schema, service, &1))
+      |> Utils.merge_blocks()
+
+    write_call_codecs =
+      functions
+      |> Enum.map(&Generator.Codec.generate_write_call(schema, service, &1))
+      |> Utils.merge_blocks()
+
+    read_result_codecs =
+      functions
+      |> Enum.map(&Generator.Codec.generate_read_result(schema, service, &1))
+      |> Utils.merge_blocks()
 
     quote do
-      alias unquote(WoodyUtils.service_module(schema, service, args_module))
+      defmodule Codec do
+        @moduledoc false
+        @behaviour :woody_client_codec
+
+        alias Woody.Thrift.Codec
+
+        @impl true
+        def get_service_name(unquote(service_module)) do
+          unquote(WoodyUtils.unqualified_name(service))
+        end
+
+        @impl true
+        unquote_splicing(rpc_types)
+
+        @impl true
+        unquote_splicing(write_call_codecs)
+
+        @impl true
+        unquote_splicing(read_result_codecs)
+      end
     end
   end
 

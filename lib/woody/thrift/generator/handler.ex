@@ -3,6 +3,7 @@ defmodule Woody.Thrift.Generator.Handler do
   alias Thrift.AST.Function
   alias Thrift.Generator.Utils
   alias Thrift.Parser.FileGroup
+  alias Woody.Thrift.Generator
   alias Woody.Thrift.Generator.Typespec
   alias Woody.Thrift.Generator.Utils, as: WoodyUtils
 
@@ -13,7 +14,12 @@ defmodule Woody.Thrift.Generator.Handler do
   def generate(namespace, schema, service) do
     dest_module = dest_module(namespace, schema, service)
 
-    constructor = generate_constructor(namespace, schema, service)
+    constructor =
+      generate_constructor(schema, service)
+      |> List.wrap()
+      |> Utils.merge_blocks()
+
+    codec = generate_codec(schema, service)
 
     handlers =
       service.functions
@@ -38,14 +44,61 @@ defmodule Woody.Thrift.Generator.Handler do
            unquote_splicing(handlers)
          end
 
-         unquote(constructor)
+         unquote(codec)
+
+         unquote_splicing(constructor)
        end
      end}
   end
 
-  defp generate_constructor(namespace, schema, service) do
+  defp generate_codec(schema, service) do
     service_module = WoodyUtils.service_module(schema, service)
-    codec_module = WoodyUtils.dest_module(namespace, schema, service, Codec)
+    functions = service.functions |> Map.values()
+
+    aliases =
+      functions
+      |> Enum.map(&Generator.Codec.generate_function_aliases(schema, service, &1))
+      |> Utils.merge_blocks()
+
+    read_call_codecs =
+      functions
+      |> Enum.map(&Generator.Codec.generate_read_call/1)
+      |> Utils.merge_blocks()
+
+    write_result_codecs =
+      functions
+      |> Enum.map(&Generator.Codec.generate_write_result(schema, service, &1))
+      |> Utils.merge_blocks()
+
+    quote do
+      defmodule Codec do
+        @moduledoc false
+
+        @behaviour :woody_server_codec
+
+        alias Woody.Thrift.Codec
+        unquote_splicing(aliases)
+
+        @impl true
+        def get_service_name(unquote(service_module)) do
+          unquote(WoodyUtils.unqualified_name(service))
+        end
+
+        @impl true
+        def read_call(buffer, unquote(service_module)) do
+          Codec.read_call(buffer, &read_call/4)
+        end
+
+        unquote_splicing(read_call_codecs)
+
+        @impl true
+        unquote_splicing(write_result_codecs)
+      end
+    end
+  end
+
+  defp generate_constructor(schema, service) do
+    service_module = WoodyUtils.service_module(schema, service)
 
     quote do
       @spec new(Handler.handler(), String.t(), Keyword.t()) :: Handler.t()
@@ -54,7 +107,7 @@ defmodule Woody.Thrift.Generator.Handler do
           {Dispatcher, Handler.expand(handler)},
           http_path,
           unquote(service_module),
-          unquote(codec_module),
+          Codec,
           options
         )
       end
