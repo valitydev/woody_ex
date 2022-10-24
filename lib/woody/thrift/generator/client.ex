@@ -160,9 +160,6 @@ defmodule Woody.Thrift.Generator.Client do
 
           {:exception, ex} ->
             raise ex
-
-          {:error, reason} ->
-            raise Thrift.ConnectionError, reason: reason
         end
       end
     end
