@@ -2,14 +2,14 @@ defmodule Woody.Thrift.Generator.Codec do
   alias Thrift.AST.Function
   alias Thrift.AST.Schema
   alias Thrift.AST.Service
-  alias Thrift.Generator.Service
+  alias Thrift.Generator
   alias Thrift.Parser.FileGroup
   alias Woody.Thrift.Generator.Utils, as: WoodyUtils
 
   @spec generate_function_aliases(Schema.t(), Service.t(), Function.t()) :: Macro.t()
   def generate_function_aliases(schema, service, %Function{oneway: false} = function) do
-    args_module = Service.module_name(function, :args)
-    resp_module = Service.module_name(function, :response)
+    args_module = Generator.Service.module_name(function, :args)
+    resp_module = Generator.Service.module_name(function, :response)
 
     quote do
       alias unquote(WoodyUtils.service_module(schema, service, args_module))
@@ -18,7 +18,7 @@ defmodule Woody.Thrift.Generator.Codec do
   end
 
   def generate_function_aliases(schema, service, %Function{oneway: true} = function) do
-    args_module = Service.module_name(function, :args)
+    args_module = Generator.Service.module_name(function, :args)
 
     quote do
       alias unquote(WoodyUtils.service_module(schema, service, args_module))
@@ -45,7 +45,7 @@ defmodule Woody.Thrift.Generator.Codec do
   @spec generate_write_call(Schema.t(), Service.t(), Function.t()) :: Macro.t()
   def generate_write_call(schema, service, %Function{name: name, oneway: oneway?} = function) do
     service_module = WoodyUtils.service_module(schema, service)
-    args_module = Service.module_name(function, :args)
+    args_module = Generator.Service.module_name(function, :args)
 
     quote do
       def write_call(
@@ -68,7 +68,7 @@ defmodule Woody.Thrift.Generator.Codec do
 
   @spec generate_read_call(Function.t()) :: Macro.t()
   def generate_read_call(%Function{name: name} = function) do
-    args_module = Service.module_name(function, :args)
+    args_module = Generator.Service.module_name(function, :args)
 
     quote do
       def read_call(buffer, type, unquote(Atom.to_string(name)), seqid) do
@@ -86,7 +86,7 @@ defmodule Woody.Thrift.Generator.Codec do
   @spec generate_write_result(Schema.t(), Service.t(), Function.t()) :: Macro.output()
   def generate_write_result(schema, service, %Function{name: name, oneway: false} = function) do
     service_module = WoodyUtils.service_module(schema, service)
-    resp_module = Service.module_name(function, :response)
+    resp_module = Generator.Service.module_name(function, :response)
 
     exceptions =
       function.exceptions
@@ -113,7 +113,7 @@ defmodule Woody.Thrift.Generator.Codec do
   end
 
   defp generate_write_exception(schema, service_module, function, exception) do
-    resp_module = Service.module_name(function, :response)
+    resp_module = Generator.Service.module_name(function, :response)
     exception_module = FileGroup.dest_module(schema.file_group, exception.type)
 
     quote do
@@ -137,7 +137,7 @@ defmodule Woody.Thrift.Generator.Codec do
   @spec generate_read_result(Schema.t(), Service.t(), Function.t()) :: Macro.t()
   def generate_read_result(schema, service, %Function{name: name, oneway: false} = function) do
     service_module = WoodyUtils.service_module(schema, service)
-    resp_module = Service.module_name(function, :response)
+    resp_module = Generator.Service.module_name(function, :response)
 
     quote do
       def read_result(buffer, unquote(service_module), unquote(name), seqid) do
