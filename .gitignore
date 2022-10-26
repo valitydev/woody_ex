@@ -26,4 +26,4 @@ woody_ex-*.tar
 /tmp/
 
 # Generated test files
-/test/gen
+/test/generated

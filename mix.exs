@@ -7,8 +7,31 @@ defmodule Woody.MixProject do
       version: "0.1.0",
       elixir: "~> 1.13",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      dialyzer: [
+        plt_add_apps: [:mix]
+      ]
     ]
+    |> Keyword.merge(overrides(Mix.env()))
+  end
+
+  defp overrides(:test) do
+    [
+      elixirc_paths: ["lib", "test"],
+      thrift: [
+        files: ["test/test.thrift"],
+        output_path: "test/generated",
+        verbose: true
+      ],
+      woody: [
+        output_path: "test/generated",
+        verbose: true
+      ]
+    ]
+  end
+
+  defp overrides(_) do
+    []
   end
 
   # Run "mix help compile.app" to learn about applications.
@@ -21,7 +44,8 @@ defmodule Woody.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:woody, git: "https://github.com/valitydev/woody_erlang.git", branch: "master"},
+      {:woody, git: "https://github.com/valitydev/woody_erlang.git", branch: "compat/woody_ex"},
+      {:thrift, git: "https://github.com/pinterest/elixir-thrift", branch: "master"},
       {:dialyxir, "~> 1.2", only: [:dev], runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false}
     ]

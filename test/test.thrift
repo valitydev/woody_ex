@@ -1,4 +1,5 @@
 namespace erlang woody.test
+namespace elixir WoodyTest
 
 struct Weapon {
     1: required string name
@@ -16,6 +17,8 @@ enum Direction {
     NEXT = 1
     PREV = 0
 }
+
+exception InvalidRequest {}
 
 exception WeaponFailure {
     1: required string exception_name = "weapon failure"
@@ -44,10 +47,11 @@ service Weapons {
         1: string name
         2: binary data
     ) throws (
-        1: WeaponFailure error
+        1: WeaponFailure failure
+        2: InvalidRequest invalid
     )
     
-    void get_stuck_looping_weapons ()
+    void get_stuck_loopingWeapons ()
 
 }
 
