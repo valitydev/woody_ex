@@ -45,7 +45,7 @@ defmodule Woody.MixProject do
   defp deps do
     [
       {:woody, git: "https://github.com/valitydev/woody_erlang.git", branch: "compat/woody_ex"},
-      {:thrift, git: "https://github.com/pinterest/elixir-thrift", branch: "master"},
+      {:thrift, git: "https://github.com/valitydev/elixir-thrift", branch: "master"},
       {:dialyxir, "~> 1.2", only: [:dev], runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false}
     ]
